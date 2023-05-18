@@ -1,6 +1,9 @@
 import sys
+import time
 SCORES = [1, 3, 2, 2, 1, 3, 3, 1, 1, 4, 4, 2, 2, 1, 1, 3, 4, 1, 1, 1, 2, 3, 3, 4, 3, 4]
-
+BEGIN_ALPHABET = 97
+NUM_ALPHABET = 26
+ALPHABETS = [chr(i+BEGIN_ALPHABET) for i in range(NUM_ALPHABET)]
 #library は使わないほうがよい? default dictなど
 
 def readwords(filename):
@@ -16,15 +19,30 @@ def breakdown(word,breakdown_template):
         else:
             return -1
     return list(breakdown.values())
-    
-def generatable(seed,target_seed):
-    #return if seed can be generated from target_seed
-    for i in range(len(seed)):
-        if seed[i]<=target_seed[i]:
-            pass
+
+def find_till_last_idx(target,sorted_list,corresponding_list):
+    low = 0
+    n = len(sorted_list)
+    high = n-1
+    while low<=high:
+        mid = (low+high)//2
+        if sorted_list[mid]<=target and (mid == n-1 or (mid<n-1 and sorted_list[mid+1]>target)):
+            return corresponding_list[:mid+1]
+        elif sorted_list[mid]>target:
+            high = mid-1
+        else:#range内に行ったときも
+            low = mid+1
+    return []
+
+def det_generatable_indices(target_seed,seed_list_dict,idx_list_dict):
+    generatable_indices = {}
+    for (i,alphabet) in enumerate(ALPHABETS):
+        prop_index_set = set(find_till_last_idx(target_seed[i],seed_list_dict[alphabet],idx_list_dict[alphabet]))
+        if i == 0:
+            generatable_indices=prop_index_set
         else:
-            return False 
-    return True
+            generatable_indices&=prop_index_set#積集合        
+    return list(generatable_indices)
 
 def calc_score(seed):
     res = 0
@@ -33,7 +51,7 @@ def calc_score(seed):
     return res
         
 
-def anagram2(target_seed,seeds,anagrams):
+def anagram2(target_seed,seed_list_dict, idx_list_dict,anagrams,seeds):
     """_summary_
 
     Args:
@@ -44,41 +62,50 @@ def anagram2(target_seed,seeds,anagrams):
         _type_: _description_
     """
     max_score = 0
-    ans = None
-    
-    for i in range(len(seeds)):
-        seed = seeds[i]
-        if generatable(seed,target_seed):
-            score = calc_score(seed)
-            if score>max_score:
-                max_score = score
-                ans = anagrams[i]
+    ans = ""
+    generatable_indices = det_generatable_indices(target_seed,seed_list_dict,idx_list_dict)
+    for idx in generatable_indices:
+        score = calc_score(seeds[idx])
+        if score>max_score:
+            max_score = score
+            ans = anagrams[idx]
     return ans
 
 def main(datafile,answerfile):
     raw_words = readwords('words.txt')
     target_words = readwords(datafile)
     breakdown_template = {}
-    for i in range(97, 123):
-        breakdown_template[chr(i)] = 0
+    for alphabet in ALPHABETS:
+        breakdown_template[alphabet] = 0
     
-    seed_anagram_list = [(breakdown(raw_word,breakdown_template),raw_word) for raw_word in raw_words]
-    seeds = [pair[0] for pair in seed_anagram_list]
-    anagrams = [pair[1] for pair in seed_anagram_list]
+    seeds = [breakdown(raw_word,breakdown_template) for raw_word in raw_words]
+
+    idx_list_dict = {}
+    seed_list_dict = {}
+
+    for (i,alphabet) in enumerate(ALPHABETS):
+        numchar_idx_list = sorted([(seed[i],idx) for (idx,seed) in enumerate(seeds)  if seed!= -1 ])  
+        seed_list_dict[alphabet] = [numchar_idx[0] for numchar_idx in numchar_idx_list]      
+        idx_list_dict[alphabet] = [numchar_idx[1] for numchar_idx in numchar_idx_list]
     
-    with open(answerfile,'wt') as f:
+    anagrams = raw_words
+    #要素の数ごとにならべかえたら速いかも?
+    
+    start_time = time.time()
+    with open(answerfile,'wt+') as f:
         for (i,target) in enumerate(target_words):
             target_seed = breakdown(target,breakdown_template)
             ans = ""
             if len(target) == 0 or target_seed == -1:
                 ans = ""
             else:
-                ans = anagram2(target_seed,seeds,anagrams)
+                ans = anagram2(target_seed,seed_list_dict,idx_list_dict,anagrams,seeds)
             f.write(ans+"\n")
             if i%20 == 0:
                 print(i)
-
+    end_time = time.time()
+    print(f'time consumption: {end_time-start_time}\n')
     return
 
 if __name__ == "__main__":
-    main(sys.argv[1], sys.argv[2])
+    main(sys.argv[1], sys.argv[2])# datafilename and answerfilename expected
