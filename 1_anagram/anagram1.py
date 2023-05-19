@@ -1,39 +1,30 @@
+def binsearch(sorted_arr,check_condition):
+    left = -1
+    right = len(sorted_arr)
+    while right - left >1:
+        mid = (left+right)//2
+        if check_condition(sorted_arr[mid]):
+            left = mid
+        else:
+            right = mid 
+    return left
+
 def find_first_idx(target,sorted_list):
-    low = 0
-    high = len(sorted_list)-1
-    while low<=high:
-        mid = (low+high)//2
-        if sorted_list[mid]==target and(mid == 0 or (mid>0 and sorted_list[mid-1]<target)) :
-            return mid
-        elif sorted_list[mid]<target:
-            low = mid+1
-        else:#range内に行ったときも
-            high = mid-1
-    return -1
+    def is_less_than(val):
+        return val<target
+    return binsearch(sorted_list,is_less_than)
 
 def find_last_idx(target,sorted_list):
-    low = 0
-    n = len(sorted_list)
-    high = n-1
-    while low<=high:
-        mid = (low+high)//2
-        if sorted_list[mid]==target and (mid == n-1 or (mid<n-1 and sorted_list[mid+1]>target)):
-            return mid
-        elif sorted_list[mid]>target:
-            high = mid-1
-        else:#range内に行ったときも
-            low = mid+1
-    return -1
+    def is_eq_or_less_than(val):
+        return val<=target
+    return binsearch(sorted_list,is_eq_or_less_than)
+
 
 def anagram1(target,sorted_seeds,sorted_anagrams):
     target_seed = sorted(target)
     first_idx = find_first_idx(target_seed,sorted_seeds)
     last_idx = find_last_idx(target_seed,sorted_seeds)
-    
-    if first_idx == -1:
-        return 
-    else:
-        return sorted_anagrams[first_idx:last_idx+1]   
+    return sorted_anagrams[first_idx+1:last_idx+1]   
 
 def main():
     with open('words.txt','r') as f:
