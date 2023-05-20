@@ -13,13 +13,16 @@ NONEED = -1
 #
 # |key|: string
 # Return value: a hash value
-def calculate_hash(key):#10桁149種類(素数)を想定
+def calculate_hash(key):#10桁149種類(素数)を想定#まずは，10桁10種類として実装
     assert type(key) == str
     # Note: This is not a good hash function. Do you see why?
-    hash = 0
-    for i in key:
-        hash += ord(i)
-    return hash
+    # hash = 0
+    # for i in key:
+    #     hash += ord(i)
+    # return hash
+
+    return int(key)#10種類の数値のみが存在する場合
+
 
 
 # An item object that represents one key - value pair in the hash table.
@@ -262,5 +265,5 @@ def performance_test():
 
 
 if __name__ == "__main__":
-    functional_test()
+    # functional_test()
     performance_test()
