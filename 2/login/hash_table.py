@@ -9,6 +9,7 @@ import random, sys, time
 #                                                                         #
 ###########################################################################
 NONEED = -1
+NUM_CHAR = 151
 # Hash function.
 #
 # |key|: string
@@ -20,8 +21,11 @@ def calculate_hash(key):#10桁149種類(素数)を想定#まずは，10桁10種�
     # for i in key:
     #     hash += ord(i)
     # return hash
-
-    return int(key)#10種類の数値のみが存在する場合
+    hash = 0
+    for (i,char) in enumerate(key):
+        hash +=  ord(char)*pow(NUM_CHAR,i)
+    return hash
+    # return int(key)#10種類の数値のみが存在する場合
 
 
 
@@ -265,5 +269,5 @@ def performance_test():
 
 
 if __name__ == "__main__":
-    # functional_test()
+    functional_test()
     performance_test()
