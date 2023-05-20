@@ -69,7 +69,7 @@ class HashTable:
                 item.value = value
                 return False
             item = item.next
-        new_item = Item(key, value, self.buckets[bucket_index])
+        new_item = Item(key, value, self.buckets[bucket_index])#古い連結リストが，新しいアイテムにぶら下がる
         self.buckets[bucket_index] = new_item
         self.item_count += 1
         return True
@@ -99,8 +99,30 @@ class HashTable:
         assert type(key) == str
         #------------------------#
         # Write your code here!  #
+        bucket_index = calculate_hash(key) % self.bucket_size  
+        item = self.buckets[bucket_index]
+        pre_item = None
+        while item:
+            if item.key  == key:
+                if pre_item == None:
+                    self.buckets[bucket_index] = item.next
+                else:
+                    pre_item.next = item.next 
+                self.item_count -= 1
+                return True 
+            pre_item = item #参照わたしになるか?
+            item = item.next
+        return False
         #------------------------#
-        pass
+
+    def print_table(self):#for debugging
+        for (i,bucket) in enumerate(self.buckets):
+            # print("bucket")
+            item = bucket
+            while item:
+                print("bucket:",i,item.key,item.value)
+                item = item.next  
+        print("done")
 
     # Return the total number of items in the hash table.
     def size(self):
@@ -139,8 +161,9 @@ def functional_test():
     assert hash_table.put("aaa", 11) == False
     assert hash_table.get("aaa") == (11, True)
     assert hash_table.size() == 4
-
+    # hash_table.print_table()
     assert hash_table.delete("aaa") == True
+    # hash_table.print_table()
     assert hash_table.get("aaa") == (None, False)
     assert hash_table.size() == 3
 
