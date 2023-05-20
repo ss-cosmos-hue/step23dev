@@ -1,3 +1,16 @@
+class SeedAnagrams():
+    def __init__(self,anagram,seed) -> None:
+        self.anagrams = [anagram]
+        self.seed = seed
+        
+    def append_newanag(self,new_anagram):
+        self.anagrams.append(new_anagram)
+        
+class SeedAnagram():
+    def __init__(self,anagram) -> None:
+        self.anagram = anagram  
+        self.seed = sorted(anagram)
+
 def binsearch(sorted_arr,check_condition):
     left = -1
     right = len(sorted_arr)
@@ -9,33 +22,36 @@ def binsearch(sorted_arr,check_condition):
             right = mid 
     return left
 
-def find_first_idx(target,sorted_list):
-    def is_less_than(val):
-        return val<target
-    return binsearch(sorted_list,is_less_than)
 
-def find_last_idx(target,sorted_list):
-    def is_eq_or_less_than(val):
-        return val<=target
-    return binsearch(sorted_list,is_eq_or_less_than)
-
-
-def anagram1(target,sorted_seeds,sorted_anagrams):
+def anagram1(target,sorted_seed_anagrams_list):
     target_seed = sorted(target)
-    first_idx = find_first_idx(target_seed,sorted_seeds)
-    last_idx = find_last_idx(target_seed,sorted_seeds)
-    return sorted_anagrams[first_idx+1:last_idx+1]   
+    def if_has_leq_seed(seed_anagrams):
+        return seed_anagrams.seed <= target_seed
+    idx = binsearch(sorted_seed_anagrams_list,if_has_leq_seed)
+    if sorted_seed_anagrams_list[idx].seed == target_seed:
+        return sorted_seed_anagrams_list[idx].anagrams
+    else:
+        return None
 
 def main():
     with open('words.txt','r') as f:
         raw_words = f.read().split("\n")
-    seed_anagram_list = [(sorted(raw_word),raw_word) for raw_word in raw_words]
-    sorted_seed_anagram_list = sorted(seed_anagram_list)
-    sorted_seeds = [pair[0] for pair in sorted_seed_anagram_list]
-    sorted_anagrams = [pair[1] for pair in sorted_seed_anagram_list]    
+    seed_anagram_list = [SeedAnagram(raw_word) for raw_word in raw_words]
+    sorted_seed_anagram_list = sorted(seed_anagram_list, key = lambda seed_anagram: seed_anagram.seed)  
     
+    sorted_seed_anagrams_list = []
+    pre_seed,cur_seed = None, None
+    for i in range(len(sorted_seed_anagram_list)):
+        cur_seed = sorted_seed_anagram_list[i].seed 
+        cur_anagram = sorted_seed_anagram_list[i].anagram 
+        if pre_seed != cur_seed:
+            sorted_seed_anagrams_list.append(SeedAnagrams(cur_anagram,cur_seed))
+        else:
+            sorted_seed_anagrams_list[-1].append_newanag(cur_anagram)
+        pre_seed = cur_seed
+        
     target = input()
-    ans = anagram1(target,sorted_seeds,sorted_anagrams)
+    ans = anagram1(target,sorted_seed_anagrams_list)
     print(ans)
     return ans
 
