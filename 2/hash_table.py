@@ -9,18 +9,14 @@ import random, sys, time
 #                                                                         #
 ###########################################################################
 NONEED = -1
-NUM_CHAR = 151
+NUM_CHAR = 131
 # Hash function.
 #
 # |key|: string
 # Return value: a hash value
-def calculate_hash(key):#10桁149種類(素数)を想定#まずは，10桁10種類として実装
+# interpret string as an expression of integer in NUM_CHAR-ary system
+def calculate_hash(key):#10桁131種類(素数)を想定
     assert type(key) == str
-    # Note: This is not a good hash function. Do you see why?
-    # hash = 0
-    # for i in key:
-    #     hash += ord(i)
-    # return hash
     hash = 0
     for (i,char) in enumerate(key):
         hash +=  ord(char)*pow(NUM_CHAR,i)
@@ -36,15 +32,16 @@ class Item:
     # |next|: The next item in the linked list. If this is the last item in the
     #         linked list, |next| is None.
     def __init__(self, key, value,next=None):
-        #,next,prev = None, other_prop = None):
         assert type(key) == str
         self.key = key
         self.value = value
         self.next = next
-        # self.prev = prev 
-        # self.other_prop = other_prop
+
+# An item object that represents one key - value - other_prperty pair in the hash table.
+# To be used specifically in the hash table
 
 class ItemInHash(Item):
+    # |other_prop|:to be used to hold the pointer of the corresponding item in linked list
     def __init__(self, key, value,next = None, other_prop = None):
         super().__init__(key, value,next)
         self.other_prop = other_prop
@@ -133,12 +130,13 @@ class HashTable:
                 self.item_count -= 1
                 self.reconstruct_if_need()
                 return True 
-            pre_item = item #参照わたしになるか?
+            pre_item = item 
             item = item.next
         return False
         #------------------------#
 
-    def print_table(self):#for debugging
+    #print all pairs of bucket-key-value in hash table for the sake of debugging
+    def print_table(self):
         for (i,bucket) in enumerate(self.buckets):
             item = bucket
             while item:
@@ -157,7 +155,8 @@ class HashTable:
     # Note: Don't change this function.
     def check_size(self):
         assert (self.bucket_size < 100 or self.item_count >= self.bucket_size * 0.3)
-         
+    
+    #reconstruct hash table according to the result of design_new_table function    
     def reconstruct_if_need(self): 
         new_bucket_size = self.design_new_table()
         if  new_bucket_size != NONEED:
@@ -173,6 +172,8 @@ class HashTable:
             self.buckets = new_table.buckets 
             self.item_count = new_table.item_count
     
+    # if the hash_table is too sparse or too crowded, return new bucket_size
+    # else return NONEED flag
     def design_new_table(self):
         new_bucket_size = NONEED
         if self.item_count > self.bucket_size*0.7:

@@ -5,28 +5,41 @@ from hash_table import HashTable,Item
 #
 # Note: Please do not use a library like collections.OrderedDict). The goal is
 #       to implement the data structure yourself!
+
+# An item object that represents one key - value pair in the linked list.
+# To be used specifically in linked list
 class ItemInLinked(Item):
+    # |prev|: The previous item in the linked list. 
+    # set to be None only if the item is the first one in linked list
     def __init__(self, key, value,prev):
         super().__init__(key, value)
         self.prev = prev
 
 class LinkedList():
+    #Intialize the linked list
     def __init__(self):
+        #|first|: first item in the linked list
+        #|last|: last item in the linked list
         self.first = None 
         self.last = None 
+    
+    #delete the oldest or last item in the linked list
+    #update |self.last| (and |self.first|)accordingly
     def mypop(self):
-        if self.last == None:#もともと0こ
+        if self.last == None:#when the item count is originally 0
             print("linkedlist is empty before deletion")
             return 
         else:
             second_last = self.last.prev
-            if second_last == None:#もともと1こ
+            if second_last == None:#when the item count is originally 1
                 self.first = None 
                 self.last = None 
-            else:#もともと2こ以上
+            else:#when the item count is originally >= 2
                 second_last.next = None
                 self.last = second_last
-        
+    
+    #add new item at the first part of the linked list
+    #update |self.first| (and |self.last|) accordingly    
     def mypush(self,key,value):
         new_ItemInLinked = ItemInLinked(key,value,prev = None)
         if self.first != None:
@@ -37,7 +50,9 @@ class LinkedList():
         new_ItemInLinked.next = self.first
         #update first
         self.first = new_ItemInLinked
-        
+    
+    #delete certain item in the linked list
+    #update  |self.first| and |self.last| if necessary
     def mydel(self,item_to_del):
         if item_to_del.next == None:#最後
             self.mypop()
@@ -48,6 +63,7 @@ class LinkedList():
             item_to_del.next.prev = item_to_del.prev
             item_to_del.prev.next = item_to_del.next
     
+    # get all the items in the linked list from first to last
     def get_items(self):
         items = []
         item = self.first
@@ -56,6 +72,7 @@ class LinkedList():
             item = item.next 
         return items
     
+    # get all the items in the linked list from last to first
     def get_items_backwards(self):
         items = []
         item = self.last
@@ -64,9 +81,11 @@ class LinkedList():
             item = item.prev 
         return items
     
-    
+    #print all the items  in the linked list from first to last
     def myprint(self):
         print(self.get_items())
+    
+    #print all the items in the linked list from last to first
     def myprint_backwards(self):
         print(self.get_items_backwards())
         
