@@ -35,12 +35,19 @@ class Item:
     # |value|: The value of the item.
     # |next|: The next item in the linked list. If this is the last item in the
     #         linked list, |next| is None.
-    def __init__(self, key, value, next):
+    def __init__(self, key, value,next=None):
+        #,next,prev = None, other_prop = None):
         assert type(key) == str
         self.key = key
         self.value = value
         self.next = next
+        # self.prev = prev 
+        # self.other_prop = other_prop
 
+class ItemInHash(Item):
+    def __init__(self, key, value,next = None, other_prop = None):
+        super().__init__(key, value,next)
+        self.other_prop = other_prop
 
 # The main data structure of the hash table that stores key - value pairs.
 # The key must be a string. The value can be any type.
@@ -66,7 +73,7 @@ class HashTable:
     # |value|: The value of the item.
     # Return value: True if a new item is added. False if the key already exists
     #               and the value is updated.
-    def put(self, key, value,under_reconstruction = False):
+    def put(self, key, value,other_prop = None, under_reconstruction = False):
         assert type(key) == str
         self.check_size() # Note: Don't remove this code.
         bucket_index = calculate_hash(key) % self.bucket_size
@@ -76,7 +83,7 @@ class HashTable:
                 item.value = value
                 return False
             item = item.next
-        new_item = Item(key, value, self.buckets[bucket_index])#古い連結リストが，新しいアイテムにぶら下がる
+        new_item = ItemInHash(key, value, next = self.buckets[bucket_index],other_prop= other_prop)#古い連結リストが，新しいアイテムにぶら下がる
         self.buckets[bucket_index] = new_item
         if not under_reconstruction:#under_reconstructionの場合はitem_countがすでにupdateされている
             self.item_count += 1
@@ -88,16 +95,22 @@ class HashTable:
     # |key|: The key.
     # Return value: If the item is found, (the value of the item, True) is
     #               returned. Otherwise, (None, False) is returned.
-    def get(self, key):
+    def get(self, key,get_other_prop = False):
         assert type(key) == str
         self.check_size() # Note: Don't remove this code.
         bucket_index = calculate_hash(key) % self.bucket_size
         item = self.buckets[bucket_index]
         while item:
             if item.key == key:
-                return (item.value, True)
+                if get_other_prop:
+                    return (item.value, item.other_prop,True)
+                else:
+                    return (item.value, True)
             item = item.next
-        return (None, False)
+        if get_other_prop:
+            return (None,None,False)
+        else:
+            return (None, False)
 
     # Delete an item from the hash table.
     #
@@ -131,7 +144,7 @@ class HashTable:
             while item:
                 print("bucket:",i,item.key,item.value)
                 item = item.next  
-        print("done")
+        print("printed hashtable")
 
     # Return the total number of items in the hash table.
     def size(self):
@@ -154,7 +167,7 @@ class HashTable:
             for cur_bucket in self.buckets:
                 item = cur_bucket 
                 while item:
-                    new_table.put(item.key,item.value,under_reconstruction=True)
+                    new_table.put(item.key,item.value,item.other_prop, under_reconstruction=True)
                     item = item.next
             self.bucket_size = new_bucket_size 
             self.buckets = new_table.buckets 
