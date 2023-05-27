@@ -1,12 +1,7 @@
 #! /usr/bin/python3
-def myabs(value):
-    return abs(value)
-def myint(value):
-    return int(value)
-def myround(value):
-    return round(value)
-functions = {'abs':myabs,'int':myint,'round':myround}#lambda式使えるかも?
-
+FUNCTIONS = {'abs':lambda x: abs(x),'int':lambda x: int(x),'round':lambda x:round(x)}
+OPERATORS = {'+':'PLUS','-':'MINUS','*':'MULTIPLY','/':'DIVIDE'}
+PARENTHESES = {'(':'OPENER',')':'CLOSER'}
 
 def read_number(line, index):
     number = 0
@@ -23,43 +18,23 @@ def read_number(line, index):
     token = {'type': 'NUMBER', 'number': number}
     return token, index
 
-
-def read_plus(line, index):#疑問:read_plus の引数にlineがあるのはなぜ?
-    token = {'type': 'PLUS'}
+def read_operator(line,index):#疑問:read_plus の引数にlineがあるのはなぜ?
+    token = {'type': OPERATORS[line[index]]}
     return token, index + 1
 
-
-def read_minus(line, index):
-    token = {'type': 'MINUS'}
+def read_parenthesis(line,index):
+    token = {'type':PARENTHESES[line[index]]}
     return token, index + 1
 
-def read_multiply(line,index):
-    token = {'type': 'MULTIPLY'}
-    return token, index + 1 
+def maybe_find_function(line,index):
+    for function_name in FUNCTIONS:
+        if line[index:index+len(function_name)] == function_name:
+            return (True ,function_name)
+    return (False,None)
 
-def read_divide(line,index):
-    token = {'type':'DIVIDE'}
-    return token, index + 1
-
-def read_open_parenthesis(line,index):
-    token = {'type':'OPENER'}
-    return token, index + 1
-
-def read_close_parenthesis(line,index):
-    token = {'type':'CLOSER'}
-    return token, index  + 1
-
-def read_abs(line,index):
-    token = {'type':'FUNCTION','effect':'abs'}
-    return token, index + len('abs')
-
-def read_int(line,index):
-    token = {'type':'FUNCTION','effect':'int'}
-    return token,index +len('int')
-
-def read_round(line,index):
-    token = {'type':'FUNCTION','effect':'round'}
-    return token,index + len('round')
+def read_function(line,index,function_name):
+    token = {'type':'FUNCTION','effect':function_name}
+    return token, index +len(function_name)
 
 #Input: one line of equation
 #Output: list of numbers and operators
@@ -69,24 +44,12 @@ def tokenize(line):
     while index < len(line):
         if line[index].isdigit():
             (token, index) = read_number(line, index)#全てひとつにしよう
-        elif line[index] == '+':
-            (token, index) = read_plus(line, index)
-        elif line[index] == '-':
-            (token, index) = read_minus(line, index)
-        elif line[index] == '*':
-            (token, index) = read_multiply(line,index)
-        elif line[index] == '/':
-            (token,index) = read_divide(line,index)
-        elif line[index] == '(':
-            (token,index) = read_open_parenthesis(line,index)
-        elif line[index] == ')':
-            (token,index) =  read_close_parenthesis(line,index)
-        elif line[index:index+len('abs')] == 'abs':
-            (token,index) = read_abs(line,index)
-        elif line[index:index+len('int')] ==  'int':
-            (token,index) = read_int(line,index)
-        elif line[index:index+len('round')] ==  'round':
-            (token,index) = read_round(line,index)
+        elif line[index] in OPERATORS.keys():
+            (token,index)  = read_operator(line,index)
+        elif line[index] in PARENTHESES.keys() :
+            (token,index) = read_parenthesis(line,index)
+        elif ((tuple_found_and_funcname  := maybe_find_function(line,index)) and tuple_found_and_funcname[0] == True):
+            (token,index) = read_function(line,index,tuple_found_and_funcname[1])
         else:
             print('Invalid character found: ' + line[index])
             exit(1)
@@ -96,7 +59,7 @@ def tokenize(line):
 #Input: tokens(list of numbers and operators)
 #Output: value of the equation
 def evaluate(tokens):
-    tokens.insert(0,{'type':'OPENER'})
+    tokens.insert(0,{'type':'OPENER'})#envelope the equation with a dummy pair of parentheses for the sake of generalization
     tokens.append({'type':'CLOSER'})
     while True:
         (tokens,has_parenthesis) = _pre_evaluate_innermost_parenthesis(tokens)
@@ -106,9 +69,10 @@ def evaluate(tokens):
     answer  = tokens[0]['number']
     return answer
 
-#Input: tokens:  list of  numbers  and operators inside the innermost parenthesis
-#               do  not have any parenthesis token
-#Output: the evaluation of the equation inside parenthesis
+#Input: tokens:  list of  numbers  and operators
+#Output: updated_tokens: the evaluation of the equation inside parenthesis 
+#        has_parenthesis: whether  or not the  given token has parentheses
+#                         if not, do not update tokens and return given tokens
 def _pre_evaluate_innermost_parenthesis(tokens):
     new_tokens = []
     has_parenthesis = False 
@@ -131,11 +95,11 @@ def _pre_evaluate_innermost_parenthesis(tokens):
     if opener_idx  == 0 or tokens[opener_idx-1]['type']!='FUNCTION':
         new_tokens = tokens[:opener_idx]+[{'type':'NUMBER','number':value_in_parenthesis}]+tokens[closer_idx+1:]
         return (new_tokens,has_parenthesis)
-    value_of_func = functions[tokens[opener_idx-1]['effect']](value_in_parenthesis)
+    value_of_func = FUNCTIONS[tokens[opener_idx-1]['effect']](value_in_parenthesis)
     new_tokens = tokens[:opener_idx-1]+[{'type':'NUMBER','number':value_of_func}]+tokens[closer_idx+1:]
     return (new_tokens,has_parenthesis)
     
-#Input: part of tokens
+#Input: tokens without any parenthesis token,  supposed to be tokens inside the innermost parenthesis at that time
 #return: value of the partial equation
 def _evaluate_partially(tokens):
     answer = 0
