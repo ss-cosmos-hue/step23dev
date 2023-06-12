@@ -127,8 +127,6 @@ class Wikipedia:
     # Calculate the page ranks and print the most popular pages.
     def find_most_popular_pages(self):
         #numpy でやると並列計算ができてはやいかもしれないが，隣接行列にすると，メモリの寮が増えるだろうのでやめておく
-        # 辞書でなく配列で扱いたいけど
-        # なんで? 配列の場合アクセスがO(1)だから¥¥¥¥¥¥¥
         #pagerankを計算する
         
         #pagerankを辞書でなくリストで管理するための，IDとlist indexの対応
@@ -144,33 +142,44 @@ class Wikipedia:
         #初期化
         page_rank = [1]*N #このうち15%は毎回配分される
         sum_rank = N 
+        count = 0
         while True:
+            count+=1
+            if not count%5:
+                print(count)
             #15%の振り分け
             new_page_rank = [0.15]*N
+            
             #85%の振り分け
+            sum_deadend_page_rank = 0
             for i in range(N):#全てのノードに対して
                 id = list_idx_to_id[i]
                 dsts = list(self.links[id])
                 
-                #隣接ノードがないので全員に振り分ける
-                if len(dsts) == 0:
-                    
-                    edge_val = 0.85*page_rank[i]/N
-                    for i in range(len(new_page_rank)):
-                        new_page_rank[i]+=edge_val
-                #隣接ノードがあるので，隣接ノーどのみに振り分ける
-                else:
+                
+                #隣接ノードがある場合は，隣接ノードのみに振り分ける
+                if len(dsts) >= 1:
                     edge_val = 0.85*page_rank[i]/len(dsts)
                     for dst in dsts:
                         dst_list_idx = id_to_list_idx[dst]
                         new_page_rank[dst_list_idx] += edge_val
-                        
-            tolerance = 1e-8
-            assert(abs(sum(new_page_rank)-sum(page_rank))<tolerance)        
+                else:
+                    #隣接ノードがない場合は，まず，行き止まりのページランクを足し合わせる
+                    sum_deadend_page_rank += page_rank[i]
+            #行き止まりノードの分を一括分配
+            for i in range(len(new_page_rank)):
+                new_page_rank[i] += 0.85*sum_deadend_page_rank/N
+            
+            #アルゴリズムが正しいことの確証を得る           
+            tolerance = 1e-2
+            assert(abs(sum(new_page_rank)-sum(page_rank))<tolerance)      
             #更新されているかどうか判定
+            convergence_threshold = 1e-2
             updated = False
+            sum_diff = 0
             for i in range(N):
-                if abs(page_rank[i]-new_page_rank[i]) > tolerance:
+                sum_diff += abs(page_rank[i]-new_page_rank[i])
+                if sum_diff > convergence_threshold:
                     updated = True 
                     page_rank = new_page_rank
                     break#for文を抜ける
@@ -178,7 +187,7 @@ class Wikipedia:
                 break#while文を抜ける   
         # pageIDとpagerankをtupleにしてsortする
         # pagerankが最大な順にpageIDを算出する
-        kNum = 5
+        kNum = min(N,3)
         assert(kNum <= N)
         page_rank_listidx_tuples = [(page_rank[i],i) for i in range(N)]
         page_rank_listidx_tuples.sort(reverse=True)
