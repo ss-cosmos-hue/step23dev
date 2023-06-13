@@ -212,7 +212,7 @@ if __name__ == "__main__":
         exit(1)
 
     wikipedia = Wikipedia(sys.argv[1], sys.argv[2])
-    # wikipedia.find_longest_titles()
-    # wikipedia.find_most_linked_pages()
-    # wikipedia.find_shortest_path("A","C")
+    wikipedia.find_longest_titles()
+    wikipedia.find_most_linked_pages()
+    wikipedia.find_shortest_path("渋谷","パレートの法則")
     wikipedia.find_most_popular_pages()
