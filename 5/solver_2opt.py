@@ -30,7 +30,7 @@ def solve(cities):
         if len(tour)>=3:
             for i in range(len(tour)-1):
                 #crossしているか，厳密に判定してもOK
-                # crossしている方が短いこともあるので，距離のみを比較する
+                # crossしている方が短いこともあるので，
                 if is_crossing(cities[tour[i]],cities[tour[i+1]],cities[tour[-1]],cities[next_city]):
                     tour[i+1:] = reversed(tour[i+1:])#swapO(n)
         tour.append(next_city)
