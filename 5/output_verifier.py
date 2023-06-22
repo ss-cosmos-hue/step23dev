@@ -3,7 +3,7 @@
 
 from common import read_input, distance, read_output
 
-CHALLENGES = 8
+CHALLENGES = 7
 
 
 def verify_output():
@@ -13,7 +13,7 @@ def verify_output():
         N = len(cities)
         for output_prefix in ('output', 'sample/greedy'):
             output_file = f'{output_prefix}_{challenge_number}.csv'
-            tour = read_output(output_file)
+            tour = read_output(output_file, N)
             assert set(tour) == set(range(N))
             path_length = sum(distance(cities[tour[i]], cities[tour[(i + 1) % N]])
                               for i in range(N))

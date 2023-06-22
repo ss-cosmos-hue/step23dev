@@ -37,11 +37,11 @@ def solve(cities, initiate_with_file=False, challenge_num=0):
             unvisited_cities.remove(next_city)
             tour.append(next_city)
             current_city = next_city
+    # print("under two opt")
+    # tour_two_opt = two_opt(tour, dist, 8)
+    print("under sa")
+    tour = simulated_annealing(
+        tour, dist, cities, t_0, c_val, candNum, thresh)
     print("under two opt")
     tour_two_opt = two_opt(tour, dist, 8)
-    print("under sa")
-    tour_sa = simulated_annealing(
-        tour_two_opt, dist, cities, t_0, c_val, candNum, thresh)
-    print("under two opt")
-    tour_two_opt = two_opt(tour_sa, dist, 8)
     return tour_two_opt
