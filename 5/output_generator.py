@@ -2,11 +2,11 @@
 
 from common import format_tour, read_input
 
-import solver_greedy
-import solver_random
+import solver_2opt
 import solver_simulated_annealing
 
-CHALLENGES = 6
+CHALLENGES = 7
+
 
 def generate_sample_output():
     for i in range(CHALLENGES):
@@ -16,7 +16,6 @@ def generate_sample_output():
         tour = solver.solve(cities)
         with open(f'output_{i}.csv', 'w') as f:
             f.write(format_tour(tour) + '\n')
-
 
 
 if __name__ == '__main__':
