@@ -1,30 +1,47 @@
 from solver_simulated_annealing import simulated_annealing
 from solver_2opt import two_opt, topleft
-from common import distance
+from common import distance, read_output, read_input
 
 
-def solve(cities):
+def solve(cities, initiate_with_file=False, challenge_num=0):
+    tour = None
     N = len(cities)
+
+    # 都市間の距離を求める。
     dist = [[0] * N for i in range(N)]
     for i in range(N):
         for j in range(i, N):
             dist[i][j] = dist[j][i] = distance(cities[i], cities[j])
 
-    current_city = topleft(cities)
-    unvisited_cities = set(range(0, N))
-    unvisited_cities.remove(current_city)
-    tour = [current_city]
+    if initiate_with_file:
+        output_file = f'sa_original/output_{challenge_num}.csv'
+        tour = read_output(output_file, N)
+    else:
 
-    while unvisited_cities:
-        next_city = min(unvisited_cities,
-                        key=lambda city: dist[current_city][city])
-        unvisited_cities.remove(next_city)
-        tour.append(next_city)
-        current_city = next_city
-    tour_improved = two_opt(tour, cities, dist, 8)
-    t_0 = 30
-    c_val = 0.5
-    thresh = 0.1
-    tour_improved_second = simulated_annealing(
-        tour_improved, t_0, c_val, cities, thresh)
-    return tour_improved_second
+        # 焼き鈍し法のパラメタを設定する。
+        t_0 = 80
+        c_val = 0.9
+        thresh = 0.2
+        candNum = 8
+
+        # 左上の点を始点とする。
+        current_city = topleft(cities)
+        unvisited_cities = set(range(0, N))
+        unvisited_cities.remove(current_city)
+        tour = [current_city]
+
+        # 走査する。
+        while unvisited_cities:
+            next_city = min(unvisited_cities,
+                            key=lambda city: dist[current_city][city])
+            unvisited_cities.remove(next_city)
+            tour.append(next_city)
+            current_city = next_city
+    print("under two opt")
+    tour_two_opt = two_opt(tour, dist, 8)
+    print("under sa")
+    tour_sa = simulated_annealing(
+        tour_two_opt, dist, cities, t_0, c_val, candNum, thresh)
+    print("under two opt")
+    tour_two_opt = two_opt(tour_sa, dist, 8)
+    return tour_two_opt
