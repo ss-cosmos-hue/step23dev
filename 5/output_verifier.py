@@ -1,14 +1,9 @@
 #!/usr/bin/env python3
 
-import math
 
-from common import read_input
+from common import read_input, distance, read_output
 
-CHALLENGES = 7
-
-
-def distance(city1, city2):
-    return math.sqrt((city1[0] - city2[0]) ** 2 + (city1[1] - city2[1]) ** 2)
+CHALLENGES = 8
 
 
 def verify_output():
@@ -18,10 +13,7 @@ def verify_output():
         N = len(cities)
         for output_prefix in ('output', 'sample/greedy'):
             output_file = f'{output_prefix}_{challenge_number}.csv'
-            with open(output_file) as f:
-                lines = f.readlines()
-                assert lines[0].strip() == 'index'
-                tour = [int(i.strip()) for i in lines[1:N + 1]]
+            tour = read_output(output_file)
             assert set(tour) == set(range(N))
             path_length = sum(distance(cities[tour[i]], cities[tour[(i + 1) % N]])
                               for i in range(N))

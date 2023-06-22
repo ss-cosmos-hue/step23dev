@@ -5,6 +5,7 @@ import math
 import random
 
 from common import print_tour, read_input
+from solver_2opt import decrease_when_swap
 
 
 def distance(city1, city2):
@@ -61,7 +62,7 @@ def simulated_annealing(x_0, t_0, c_val, cities, thresh=0.01):
                 a = b-1
                 d = c + 1
                 edges_to_swap.append((a, b, c, d))
-                swap_merits.append(swap_merit(
+                swap_merits.append(decrease_when_swap(
                     cities[x[a]], cities[x[b]], cities[x[c]], cities[x[d]]))
 
         # for i in range(candnum):
