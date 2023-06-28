@@ -47,9 +47,10 @@ typedef struct my_metadata_pair_t
 //
 my_heap_t my_heap;
 const int bin_num = 9;
-my_heap_t my_heap_bins[9]; // bins[i] → i * 1000 <= size && size < (i + 1) * 1000
-// const int bin_size = 1000;
-const int bin_sizes[9] = {16, 32, 64, 128, 256, 512, 1024, 2048, 4096}; // up to
+my_heap_t my_heap_bins[9];
+const int bin_sizes[9] = {16, 32, 64, 128, 256, 512, 1024, 2048, 4096}; // up to this size
+// const int bin_sizes[9] = {500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500}; // up to this size
+
 //
 // Helper functions (feel free to add/remove/edit!)
 //
@@ -356,7 +357,7 @@ void *my_malloc(size_t size)
   // Free list binがないときは、my_heapを用いる。
   // my_metadata_t *metadata;
   // my_metadata_t *prev = NULL;
-
+  const int kFirstFit = 0;
   const int kBestFit = 1;
 
   // Free list binがあるときは、sizeごとに、適切なheapを選択する。
@@ -377,7 +378,7 @@ void *my_malloc(size_t size)
     // 今のbinに少なくとも1つ空き領域があるならば、bestFitで空き領域を探す。
     metadata = bin.free_head;
     prev = NULL;
-    my_metadata_pair_t cur_prev_metadata = customFit(size, metadata, prev, kBestFit);
+    my_metadata_pair_t cur_prev_metadata = customFit(size, metadata, prev, kFirstFit);
     metadata = cur_prev_metadata.metadata;
     prev = cur_prev_metadata.prev;
     // 条件に合う空き領域が見つかれば、ループを抜け、そうでなければ次のbinを見る。
