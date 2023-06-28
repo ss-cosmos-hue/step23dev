@@ -15,6 +15,7 @@ worst fit 実装
 ![worstfit without bin](worstfit_without_bin.png)
 
 
-# 結果の考察
-
+# free list bin
+![bestfit with bin](bestfit_free_list_bin.png)
+単純なbestfitの実装より、時間効率が良い。
 # 

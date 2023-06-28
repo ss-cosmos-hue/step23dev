@@ -46,10 +46,10 @@ typedef struct my_metadata_pair_t
 // Static variables (DO NOT ADD ANOTHER STATIC VARIABLES!)
 //
 my_heap_t my_heap;
-const int bin_num = 10;
-my_heap_t my_heap_bins[10]; // bins[i] → i * 1000 <= size && size < (i + 1) * 1000
-const int bin_size = 1000;
-
+const int bin_num = 9;
+my_heap_t my_heap_bins[9]; // bins[i] → i * 1000 <= size && size < (i + 1) * 1000
+// const int bin_size = 1000;
+const int bin_sizes[9] = {16, 32, 64, 128, 256, 512, 1024, 2048, 4096}; // up to
 //
 // Helper functions (feel free to add/remove/edit!)
 //
@@ -71,14 +71,28 @@ void my_print_free_list_bin()
 {
   for (size_t i = 0; i < bin_num; i++)
   {
-    printf("bin サイズ範囲\t%ld~%ld\n", bin_size * i, bin_size * (i + 1) - 1);
+    printf("bin サイズ範囲\t%d\n", bin_sizes[i]);
     my_print_free_list(my_heap_bins[i].free_head);
   }
 }
 
+int size_to_bin_index(const size_t size)
+{
+  int bin_index = bin_num - 1;
+  for (size_t i = 0; i < bin_num; i++)
+  {
+    if (bin_sizes[i] >= size)
+    {
+      bin_index = i;
+      break;
+    }
+  }
+  return bin_index;
+}
+
 my_heap_t *size_to_bin(const size_t size)
 {
-  return &my_heap_bins[size / bin_size];
+  return &my_heap_bins[size_to_bin_index(size)];
 }
 
 my_heap_t *metadata_to_bin(my_metadata_t *metadata)
@@ -96,15 +110,47 @@ void my_add_to_free_list(my_metadata_t *metadata)
 void my_add_to_free_list_bin(my_metadata_t *metadata)
 {
   assert(!metadata->next);
+  // すべてのビンを見て、繋がっていれば、前後とつなげる。
+  // もし、前の空き領域と隣接していれば、前の空き領域のmetadata->sizeを変更し、現在のmetadataを変更する。
+  // もし、次の空き領域と隣接していれば、
+  // もし、前後もfree slotであれば連結させる。
+  //  metadata | free slot | metadata | free slot | metadata | free slot |
+  // 案１）新しくaddしようとしているmetadataの前後を、ポインタ操作で読み取る？
+  //      前のmetadataへのアクセス？？できない
+  //      次のmetadataへのアクセス？？
+  //      次が空き領域ならば、次のmetadata->nextはdummyを指すか、NULL以外となり、
+  //      次がallocated領域ならば、次のmetadata->nextはNULLとなる。
+  // 次が空き領域ならば、merge操作を行う。
+  // my_metadata_t *next_metadata = metadata + metadata->size; // これはページを超えてしまうことがあるのだろうか？
+  // if (next_metadata->next)
+  // {
+  //   // merge操作は、次の空き領域をfreelistbinから外し、今の空き領域をつなげる。
+  //   metadata->size += next_metadata->size;
+  //   my_remove_from_free_list_bin(next_metadata,prev???);
+  //   // removeするときに、リストの中の前の要素が必要だ汗
+  //   // 　連結リストにprevの情報を入れるというのも手だけど、メモリ消費が増える。
+  //   my_heap_t *bin = metadata_to_bin(metadata);
+  //   metadata->next = bin->free_head;
+  //   bin->free_head = metadata;
+  // }
+  // // 次がallocated領域ならば、今までと同様の操作を行う。
+  // else
+  // {
   my_heap_t *bin = metadata_to_bin(metadata);
   metadata->next = bin->free_head;
   bin->free_head = metadata;
+  // }
+  // 案２）新しくaddしようとしているmetadataの物理的な前後を、binの中から探す。
+  //  懸念；探すのに時間を使ってしまう。
+  // ただ、binの中を順に走査するので、prevを必ず得ることができ、removeすることができる。
+  // 案３）物理的な並びを反映した、linked listを新たに作成する。
+  //  懸念：メモリを新たに使う。
 }
 
 void my_remove_from_free_list(my_metadata_t *metadata, my_metadata_t *prev)
 {
   printf("removing from free list size\t%ld\n", metadata->size);
-  assert(metadata->size < bin_num * bin_size);
+  assert(metadata->size <= 4096);
   if (prev)
   {
     prev->next = metadata->next;
@@ -315,7 +361,7 @@ void *my_malloc(size_t size)
 
   // Free list binがあるときは、sizeごとに、適切なheapを選択する。
   // printf("start mallocing%ld\n", size);
-  int bin_index = size / bin_size;
+  int bin_index = size_to_bin_index(size);
   my_heap_t bin = my_heap_bins[bin_index];
   my_metadata_t *metadata = bin.free_head;
   my_metadata_t *prev = NULL;
