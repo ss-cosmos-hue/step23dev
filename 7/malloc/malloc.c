@@ -33,8 +33,10 @@ typedef struct my_metadata_t
 
 typedef struct my_heap_t
 {
-  my_metadata_t *free_head;
-  my_metadata_t dummy;
+  size_t bin_num;
+  size_t bin_sizes[9];
+  my_metadata_t *free_head[9];
+  my_metadata_t dummy[9];
 } my_heap_t;
 
 typedef struct my_metadata_pair_t
@@ -46,10 +48,6 @@ typedef struct my_metadata_pair_t
 // Static variables (DO NOT ADD ANOTHER STATIC VARIABLES!)
 //
 my_heap_t my_heap;
-const int bin_num = 9;
-my_heap_t my_heap_bins[9];                                              // クラスの中に実装する、というのが分からない。
-const int bin_sizes[9] = {16, 32, 64, 128, 256, 512, 1024, 2048, 4096}; // up to this size
-// const int bin_sizes[9] = {500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500}; // up to this size
 
 //
 // Helper functions (feel free to add/remove/edit!)
@@ -70,19 +68,19 @@ void my_print_free_list(my_metadata_t *heap_head)
 
 void my_print_free_list_bin()
 {
-  for (size_t i = 0; i < bin_num; i++)
+  for (size_t i = 0; i < my_heap.bin_num; i++)
   {
-    printf("bin サイズ範囲\t%d\n", bin_sizes[i]);
-    my_print_free_list(my_heap_bins[i].free_head);
+    printf("bin サイズ範囲\t%ld\n", my_heap.bin_sizes[i]);
+    my_print_free_list(my_heap.free_head[i]);
   }
 }
 
 int size_to_bin_index(const size_t size)
 {
-  int bin_index = bin_num - 1;
-  for (size_t i = 0; i < bin_num; i++)
+  int bin_index = my_heap.bin_num - 1;
+  for (size_t i = 0; i < my_heap.bin_num; i++)
   {
-    if (bin_sizes[i] >= size)
+    if (my_heap.bin_sizes[i] >= size)
     {
       bin_index = i;
       break;
@@ -91,22 +89,17 @@ int size_to_bin_index(const size_t size)
   return bin_index;
 }
 
-my_heap_t *size_to_bin(const size_t size)
+int metadata_to_bin_index(my_metadata_t *metadata)
 {
-  return &my_heap_bins[size_to_bin_index(size)];
+  return size_to_bin_index(metadata->size);
 }
 
-my_heap_t *metadata_to_bin(my_metadata_t *metadata)
-{
-  return size_to_bin(metadata->size);
-}
-
-void my_add_to_free_list(my_metadata_t *metadata)
-{
-  assert(!metadata->next);
-  metadata->next = my_heap.free_head;
-  my_heap.free_head = metadata;
-}
+// void my_add_to_free_list(my_metadata_t *metadata)
+// {
+//   assert(!metadata->next);
+//   metadata->next = my_heap.free_head;
+//   my_heap.free_head = metadata;
+// }
 
 void my_add_to_free_list_bin(my_metadata_t *metadata)
 {
@@ -137,9 +130,9 @@ void my_add_to_free_list_bin(my_metadata_t *metadata)
   // // 次がallocated領域ならば、今までと同様の操作を行う。
   // else
   // {
-  my_heap_t *bin = metadata_to_bin(metadata);
-  metadata->next = bin->free_head;
-  bin->free_head = metadata;
+  int bin_index = metadata_to_bin_index(metadata);
+  metadata->next = my_heap.free_head[bin_index];
+  my_heap.free_head[bin_index] = metadata;
   // }
   // 案２）新しくaddしようとしているmetadataの物理的な前後を、binの中から探す。
   //  懸念；探すのに時間を使ってしまう。
@@ -147,38 +140,32 @@ void my_add_to_free_list_bin(my_metadata_t *metadata)
   // 案３）物理的な並びを反映した、linked listを新たに作成する。
   //  懸念：メモリを新たに使う。
 }
-/**
- * @brief　を引数として、値を返す。
- */
-void my_merge()
-{
-}
 
-void my_remove_from_free_list(my_metadata_t *metadata, my_metadata_t *prev)
-{
-  printf("removing from free list size\t%ld\n", metadata->size);
-  assert(metadata->size <= 4096);
-  if (prev)
-  {
-    prev->next = metadata->next;
-  }
-  else
-  {
-    my_heap.free_head = metadata->next;
-  }
-  metadata->next = NULL;
-}
+// void my_remove_from_free_list(my_metadata_t *metadata, my_metadata_t *prev)
+// {
+//   printf("removing from free list size\t%ld\n", metadata->size);
+//   assert(metadata->size <= 4096);
+//   if (prev)
+//   {
+//     prev->next = metadata->next;
+//   }
+//   else
+//   {
+//     my_heap.free_head = metadata->next;
+//   }
+//   metadata->next = NULL;
+// }
 
 void my_remove_from_free_list_bin(my_metadata_t *metadata, my_metadata_t *prev)
 {
-  my_heap_t *bin = metadata_to_bin(metadata);
   if (prev)
   {
     prev->next = metadata->next;
   }
   else
   {
-    bin->free_head = metadata->next;
+    int bin_index = metadata_to_bin_index(metadata);
+    my_heap.free_head[bin_index] = metadata->next;
   }
   metadata->next = NULL;
 }
@@ -189,11 +176,15 @@ void my_remove_from_free_list_bin(my_metadata_t *metadata, my_metadata_t *prev)
 
 void my_initialize_free_list_bin()
 {
-  for (int i = 0; i < bin_num; i++)
+  const size_t bin_num = 9;
+  const size_t bin_sizes[9] = {16, 32, 64, 128, 256, 512, 1024, 2048, 4096}; // up to this size
+  my_heap.bin_num = bin_num;
+
+  for (size_t i = 0; i < bin_num; i++)
   {
-    my_heap_bins[i].free_head = &my_heap_bins[i].dummy;
-    my_heap_bins[i].dummy.size = 0;
-    my_heap_bins[i].dummy.next = NULL;
+    my_heap.bin_sizes[i] = bin_sizes[i];
+    my_heap.free_head[i] = &my_heap.dummy[i];
+    my_heap.dummy[i].next = NULL;
   }
 }
 
@@ -201,9 +192,6 @@ void my_initialize_free_list_bin()
 void my_initialize()
 {
   my_initialize_free_list_bin();
-  my_heap.free_head = &my_heap.dummy;
-  my_heap.dummy.size = 0;
-  my_heap.dummy.next = NULL;
 }
 
 /**
@@ -369,22 +357,22 @@ void *my_malloc(size_t size)
   // Free list binがあるときは、sizeごとに、適切なheapを選択する。
   // printf("start mallocing%ld\n", size);
   int bin_index = size_to_bin_index(size);
-  my_heap_t bin = my_heap_bins[bin_index];
-  my_metadata_t *metadata = bin.free_head;
+  my_metadata_t *bin_free_head = my_heap.free_head[bin_index];
+  my_metadata_t *metadata = bin_free_head;
   my_metadata_t *prev = NULL;
   bool is_found = false;
-  for (int i = bin_index; i < bin_num; i++)
+  for (int i = bin_index; i < my_heap.bin_num; i++)
   {
-    bin = my_heap_bins[i];
+    bin_free_head = my_heap.free_head[i];
     // 今のbinに空き領域が一つも無ければ、次のbinを見る。
-    if (bin.free_head->size == 0)
+    if (bin_free_head->size == 0)
     {
       continue;
     }
     // 今のbinに少なくとも1つ空き領域があるならば、bestFitで空き領域を探す。
-    metadata = bin.free_head;
+    metadata = bin_free_head;
     prev = NULL;
-    my_metadata_pair_t cur_prev_metadata = customFit(size, metadata, prev, kFirstFit);
+    my_metadata_pair_t cur_prev_metadata = customFit(size, metadata, prev, kBestFit);
     metadata = cur_prev_metadata.metadata;
     prev = cur_prev_metadata.prev;
     // 条件に合う空き領域が見つかれば、ループを抜け、そうでなければ次のbinを見る。
