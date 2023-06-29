@@ -47,7 +47,7 @@ typedef struct my_metadata_pair_t
 //
 my_heap_t my_heap;
 const int bin_num = 9;
-my_heap_t my_heap_bins[9];
+my_heap_t my_heap_bins[9];                                              // クラスの中に実装する、というのが分からない。
 const int bin_sizes[9] = {16, 32, 64, 128, 256, 512, 1024, 2048, 4096}; // up to this size
 // const int bin_sizes[9] = {500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500}; // up to this size
 
@@ -146,6 +146,12 @@ void my_add_to_free_list_bin(my_metadata_t *metadata)
   // ただ、binの中を順に走査するので、prevを必ず得ることができ、removeすることができる。
   // 案３）物理的な並びを反映した、linked listを新たに作成する。
   //  懸念：メモリを新たに使う。
+}
+/**
+ * @brief　を引数として、値を返す。
+ */
+void my_merge()
+{
 }
 
 void my_remove_from_free_list(my_metadata_t *metadata, my_metadata_t *prev)
